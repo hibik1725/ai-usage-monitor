@@ -90,6 +90,7 @@ chmod +x Scripts/setup.sh Scripts/uninstall.sh Scripts/build-app.sh Scripts/veri
 | インストール | `/Applications/QuotaBar.app` にコピー |
 | ログイン時起動 | `~/Library/LaunchAgents/com.hivvv.quotabar.plist` を登録 |
 | デスクトップ表示 | `defaults write com.hivvv.quotabar showDesktopPanelOnLaunch -bool true` |
+| 通知テスト | 起動時テスト通知 + `--test-notification` + システム設定を開く |
 | Widget 登録 | `pluginkit -a`（ad-hoc 署名では失敗することがある） |
 | 起動 | `open -a /Applications/QuotaBar.app` |
 
@@ -108,6 +109,9 @@ launchctl print "gui/$(id -u)/com.hivvv.quotabar" 2>/dev/null | head -5 \
 
 # デスクトップ表示フラグ
 defaults read com.hivvv.quotabar showDesktopPanelOnLaunch
+
+# 通知テスト
+/Applications/QuotaBar.app/Contents/MacOS/QuotaBar --test-notification
 ```
 
 ### 4. ユーザーへの完了報告テンプレート
@@ -118,11 +122,14 @@ QuotaBar のセットアップが完了しました。
 ✓ /Applications/QuotaBar.app をインストール
 ✓ ログイン時に自動起動（LaunchAgent）
 ✓ 起動時にデスクトップへ Medium パネルを表示
+✓ 残量しきい値アラート（通知）を有効化
 
 確認方法:
 - メニューバー右上に Cx / Cl / Gk の残量% が表示される
 - デスクトップにグラデーションの Medium ウィジェット風パネルが表示される
 - パネルはドラッグで移動可能。メニューから表示/非表示を切り替え可能
+- 通知: セットアップ直後にテスト通知が届く。以降は残量がしきい値（既定 20%）未満で通知
+- 手動テスト: メニューバー → QuotaBar →「通知をテスト」
 
 （任意）macOS ネイティブ WidgetKit ウィジェット:
   デスクトップを右クリック →「ウィジェットを編集」→ QuotaBar (Medium) を追加
@@ -143,6 +150,7 @@ QuotaBar のセットアップが完了しました。
 - [ ] `--probe` が少なくとも 1 プロバイダでエラーなく終了する（ログイン済みのもの）
 - [ ] `~/Library/Group Containers/group.com.hivvv.quotabar/usage-snapshot.json` が存在する
 - [ ] QuotaBar プロセスが起動している（`pgrep -x QuotaBar`）
+- [ ] `--test-notification` が成功する、またはシステム設定で QuotaBar の通知が許可されている
 
 ---
 
@@ -190,7 +198,7 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.hivvv.quotabar.plist
 | LaunchAgent が動かない | `launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.hivvv.quotabar.plist` → `bootstrap` し直す |
 | Claude Keychain エラー | Keychain Access で `Claude Code-credentials` に QuotaBar.app の常時許可を追加 |
 | Widget ギャラリーに無い | 想定内（ad-hoc）。フローティングパネルを案内 |
-| 通知が来ない | システム設定 → 通知 → QuotaBar を許可 |
+| 通知が来ない | システム設定 → 通知 → QuotaBar を許可。メニュー「通知をテスト」で確認。Focus モードも確認 |
 
 ---
 

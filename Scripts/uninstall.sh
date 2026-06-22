@@ -10,5 +10,6 @@ launchctl bootout "gui/${GUI_UID}" "${PLIST_DEST}" 2>/dev/null || launchctl unlo
 rm -f "${PLIST_DEST}"
 rm -rf "/Applications/${APP_NAME}.app"
 defaults delete com.hivvv.quotabar showDesktopPanelOnLaunch 2>/dev/null || true
+defaults delete com.hivvv.quotabar sendTestNotificationOnLaunch 2>/dev/null || true
 
 echo "✓ QuotaBar uninstalled (LaunchAgent removed, /Applications/QuotaBar.app deleted)"

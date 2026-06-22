@@ -75,6 +75,9 @@ fi
 defaults write "${BUNDLE_ID}" showDesktopPanelOnLaunch -bool true
 ok "Desktop panel will open on launch (showDesktopPanelOnLaunch=true)"
 
+defaults write "${BUNDLE_ID}" sendTestNotificationOnLaunch -bool true
+ok "Test notification will fire on first launch after setup"
+
 # --- Widget extension registration ---
 
 if [[ -d "${APPEX}" ]]; then
@@ -91,6 +94,16 @@ fi
 
 info "Starting ${APP_NAME}…"
 open -a "${INSTALL_PATH}"
+
+info "Requesting notification permission (approve the macOS dialog if shown)…"
+sleep 2
+if "${INSTALL_PATH}/Contents/MacOS/${APP_NAME}" --test-notification 2>/dev/null; then
+    ok "Test notification sent (osascript)"
+else
+    warn "Test notification failed — enable in System Settings → Notifications → QuotaBar"
+fi
+open "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=${BUNDLE_ID}" 2>/dev/null \
+    || open "x-apple.systempreferences:com.apple.preference.notifications" 2>/dev/null || true
 
 info "Waiting for first usage fetch…"
 for _ in $(seq 1 30); do
@@ -119,6 +132,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo " • Menu bar: look for Cx / Cl / Gk percentages (top-right)"
 echo " • Desktop:  floating Medium panel opens automatically"
 echo " • Login:    auto-starts via LaunchAgent"
+echo " • Alerts:   when usage drops below threshold (menu → 通知をテスト)"
 echo ""
 echo " Toggle desktop panel: click menu bar icon → デスクトップウィジェットを表示/隠す"
 echo " Re-probe:             ${INSTALL_PATH}/Contents/MacOS/${APP_NAME} --probe"

@@ -48,7 +48,7 @@ cd ai-usage-monitor
 ./Scripts/setup.sh
 ```
 
-`setup.sh` が行うこと: ビルド → `/Applications/QuotaBar.app` → ログイン時 LaunchAgent → 起動時デスクトップパネル表示 → 動作検証
+`setup.sh` が行うこと: ビルド → `/Applications/QuotaBar.app` → ログイン時 LaunchAgent → 起動時デスクトップパネル表示 → 通知許可・テスト → 動作検証
 
 ---
 
@@ -233,8 +233,11 @@ defaults write com.hivvv.quotabar alertThreshold -float 15   # しきい値を 1
 
 | 権限 | 必要な場合 |
 |---|---|
-| **通知** | 残量がしきい値を下回ったときのアラート |
+| **通知** | 残量がしきい値（既定 20%）を下回ったときのアラート。メニュー「通知をテスト」で確認 |
 | **Keychain** | Claude OAuth 資格情報の読み取り（macOS がプロンプト） |
+
+しきい値アラートは各レート枠ごとに 1 回だけ通知（リセット後に再通知）。
+セットアップ直後はテスト通知が届きます。届かない場合は **システム設定 → 通知 → QuotaBar** を許可してください。
 
 QuotaBar は既知の CLI 設定パスと Keychain 項目だけを読みます。ディスク全体のスキャンはしません。
 
@@ -253,6 +256,7 @@ Keychain プロンプトを減らすには、Keychain Access で `Claude Code-cr
 | `pluginkit: rejected` | 同上。`./Scripts/verify-widget.sh` でバンドル種別を確認 |
 | Claude だけ取得失敗 | Keychain 許可を確認。`~/.claude/.credentials.json` の有無を確認 |
 | Grok が 0% のまま | `~/.grok/auth.json` のトークン期限。Grok CLI で再認証 |
+| 通知が来ない | システム設定で QuotaBar を許可。メニュー「通知をテスト」。集中モード OFF を確認 |
 
 ---
 

@@ -16,6 +16,16 @@ if CommandLine.arguments.contains("--show-desktop") {
         }
         app.run()
     }
+} else if CommandLine.arguments.contains("--test-notification") {
+    let title = "QuotaBar 通知テスト"
+    let body = "残量がしきい値を下回るとお知らせします。"
+    let p = Process()
+    p.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+    let esc = { (s: String) in s.replacingOccurrences(of: "\"", with: "'") }
+    p.arguments = ["-e", "display notification \"\(esc(body))\" with title \"\(esc(title))\""]
+    try? p.run()
+    p.waitUntilExit()
+    exit(p.terminationStatus == 0 ? 0 : 1)
 } else if CommandLine.arguments.contains("--probe") {
     let sem = DispatchSemaphore(value: 0)
     Task {

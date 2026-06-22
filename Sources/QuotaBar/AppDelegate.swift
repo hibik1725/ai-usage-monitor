@@ -3,7 +3,7 @@ import QuotaBarCore
 import UserNotifications
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     private var statusItem: NSStatusItem!
     private let menu = NSMenu()
     private var timer: Timer?
@@ -34,7 +34,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         rebuildMenu()
 
         if canUseUserNotifications {
-            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { [weak self] granted, error in
+            let center = UNUserNotificationCenter.current()
+            center.delegate = self
+            center.requestAuthorization(options: [.alert, .sound]) { [weak self] granted, error in
                 Task { @MainActor in
                     guard let self else { return }
                     // If UN can't authorize (common for ad-hoc-signed apps), fall back to osascript.
@@ -45,6 +47,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         } else {
             notificationsReady = true // osascript fallback always available
+        }
+
+        if UserDefaults.standard.bool(forKey: "sendTestNotificationOnLaunch") {
+            UserDefaults.standard.set(false, forKey: "sendTestNotificationOnLaunch")
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(2))
+                self.sendTestNotification()
+            }
         }
 
         refresh()
@@ -179,6 +189,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let desktopTitle = desktopPanel.isVisible ? "デスクトップウィジェットを隠す" : "デスクトップウィジェットを表示"
         menu.addItem(withTitle: desktopTitle, action: #selector(toggleDesktopPanel), keyEquivalent: "d").target = self
+        menu.addItem(withTitle: "通知をテスト", action: #selector(testNotification), keyEquivalent: "t").target = self
         menu.addItem(withTitle: "今すぐ更新", action: #selector(refreshNow), keyEquivalent: "r").target = self
         menu.addItem(.separator())
         menu.addItem(withTitle: "終了", action: #selector(quit), keyEquivalent: "q").target = self
@@ -222,6 +233,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func refreshNow() { refresh() }
+    @objc private func testNotification() { sendTestNotification() }
     @objc private func toggleDesktopPanel() {
         desktopPanel.toggle(with: UsageSnapshot.from(latest))
         rebuildMenu()
@@ -256,6 +268,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         defaults.set(Array(notified), forKey: "notifiedKeys")
     }
 
+    func sendTestNotification() {
+        postNotification(
+            title: "QuotaBar 通知テスト",
+            body: "残量がしきい値（\(Int(alertThreshold))%）を下回るとお知らせします。"
+        )
+    }
+
+    // Menu bar apps stay foreground; without this delegate macOS swallows banners.
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
+    }
+
     private func postNotification(title: String, body: String) {
         if canUseUserNotifications, !forceFallbackNotifier {
             let content = UNMutableNotificationContent()
@@ -263,14 +291,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             content.body = body
             content.sound = .default
             let req = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
-            UNUserNotificationCenter.current().add(req)
+            UNUserNotificationCenter.current().add(req) { [weak self] error in
+                guard error != nil else { return }
+                Task { @MainActor in self?.postNotificationViaOsascript(title: title, body: body) }
+            }
         } else {
-            // Fallback for running as a bare binary (no bundle id): osascript.
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-            let esc = { (s: String) in s.replacingOccurrences(of: "\"", with: "'") }
-            p.arguments = ["-e", "display notification \"\(esc(body))\" with title \"\(esc(title))\""]
-            try? p.run()
+            postNotificationViaOsascript(title: title, body: body)
         }
+    }
+
+    private func postNotificationViaOsascript(title: String, body: String) {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        let esc = { (s: String) in s.replacingOccurrences(of: "\"", with: "'") }
+        p.arguments = ["-e", "display notification \"\(esc(body))\" with title \"\(esc(title))\""]
+        try? p.run()
     }
 }
