@@ -1,0 +1,20 @@
+# Swift Package Manager
+.build/
+*.xcodeproj
+*.xcworkspace
+DerivedData/
+
+# Build artifacts
+dist/
+
+# Local reference checkout (not shipped)
+reference/
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Editor
+.idea/
+.vscode/
