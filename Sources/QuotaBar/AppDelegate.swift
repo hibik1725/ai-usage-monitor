@@ -247,7 +247,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         // silently swallow the first alert and never retry for that window.
         guard notificationsReady else { return }
         let defaults = UserDefaults.standard
+
         var notified = Set(defaults.stringArray(forKey: "notifiedKeys") ?? [])
+
+        // One-time migration: old keys embedded volatile reset timestamps.
+        if !defaults.bool(forKey: "notifiedKeysV2") {
+            notified.removeAll()
+            for p in Provider.allCases {
+                guard let usage = result[p], usage.error == nil else { continue }
+                for w in usage.windows where w.remainingPercent < alertThreshold {
+                    notified.insert(w.notifyKey(provider: p))
+                }
+            }
+            defaults.set(true, forKey: "notifiedKeysV2")
+        }
+
+        // Clear only when a window recovers above threshold (new depletion episode may alert again).
+        for p in Provider.allCases {
+            guard let usage = result[p], usage.error == nil else { continue }
+            for w in usage.windows where w.remainingPercent >= alertThreshold {
+                notified.remove(w.notifyKey(provider: p))
+            }
+        }
 
         for p in Provider.allCases {
             guard let usage = result[p], usage.error == nil else { continue }
@@ -262,9 +283,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 )
             }
         }
-        // Keep the set from growing forever: only retain keys for currently-active windows.
-        let active = Set(result.values.flatMap { u in u.windows.map { $0.notifyKey(provider: u.provider) } })
-        notified.formIntersection(active)
+
         defaults.set(Array(notified), forKey: "notifiedKeys")
     }
 

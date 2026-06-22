@@ -40,10 +40,10 @@ public struct RateWindow: Sendable {
 
     public var remainingPercent: Double { max(0, 100 - usedPercent) }
 
-    /// Stable key for notification de-duplication, scoped to the current window instance.
+    /// Stable key for notification de-duplication (provider + window name only).
+    /// Do not include `resetsAt` — API timestamps can drift between polls and would re-fire alerts.
     public func notifyKey(provider: Provider) -> String {
-        let reset = resetsAt.map { String(Int($0.timeIntervalSince1970)) } ?? "na"
-        return "\(provider.rawValue).\(name).\(reset)"
+        "\(provider.rawValue).\(name)"
     }
 }
 
