@@ -64,7 +64,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.lastUpdated = Date()
             let snapshot = UsageSnapshot.from(result)
             SnapshotStore.save(snapshot)
-            self.desktopPanel.refresh(with: snapshot)
+            if UserDefaults.standard.bool(forKey: "showDesktopPanelOnLaunch") {
+                self.desktopPanel.show(snapshot: snapshot)
+            } else {
+                self.desktopPanel.refresh(with: snapshot)
+            }
             self.isFetching = false
             self.updateTitle()
             self.rebuildMenu()

@@ -16,6 +16,42 @@ Cookie 復号・WebView スクレイプ・外部依存は使いません。
 
 ---
 
+## クイックセットアップ（AI に任せる）
+
+**Claude Code / Codex / Cursor** などに以下を貼り付けるだけで、ビルド・インストール・ログイン時自動起動・デスクトップ表示まで完了できます。
+
+<details>
+<summary><strong>コピー用プロンプト（クリックで展開）</strong></summary>
+
+```text
+このリポジトリを macOS にセットアップしてください。
+
+1. git clone git@github.com:hibik1725/ai-usage-monitor.git（未クローンなら）
+2. リポジトリ直下の SETUP.md を読み、手順をすべて実行する
+3. ./Scripts/setup.sh を実行してビルド・インストール・ログイン時自動起動・デスクトップ表示を有効化する
+4. 検証コマンドを実行し、成功基準を満たすまで報告する
+5. 失敗したら SETUP.md のトラブルシューティングに従い自己修復する
+
+前提: macOS 14+、Xcode Command Line Tools 済み。
+Codex / Claude Code / Grok のいずれか CLI でログイン済みであること。
+```
+
+</details>
+
+詳細手順・成功基準・トラブルシューティング: **[SETUP.md](SETUP.md)**
+
+人間が自分で入れる場合:
+
+```sh
+git clone git@github.com:hibik1725/ai-usage-monitor.git
+cd ai-usage-monitor
+./Scripts/setup.sh
+```
+
+`setup.sh` が行うこと: ビルド → `/Applications/QuotaBar.app` → ログイン時 LaunchAgent → 起動時デスクトップパネル表示 → 動作検証
+
+---
+
 ## Why QuotaBar?
 
 | 課題 | QuotaBar の答え |
@@ -141,14 +177,28 @@ Widget 単体では Keychain / ネットワーク取得はしません。
 
 ## インストール / ビルド
 
-Xcode 不要。Command Line Tools の Swift だけで完結します。
+### 推奨: ワンショット（セットアップ + ログイン起動 + デスクトップ表示）
 
 ```sh
 git clone git@github.com:hibik1725/ai-usage-monitor.git
 cd ai-usage-monitor
+./Scripts/setup.sh
+```
+
+### 手動ビルドのみ
+
+Xcode 不要。Command Line Tools の Swift だけで完結します。
+
+```sh
 ./Scripts/build-app.sh          # dist/QuotaBar.app を生成（release + ad-hoc 署名）
 open dist/QuotaBar.app          # 起動（初回は通知許可を承認）
-cp -R dist/QuotaBar.app /Applications/   # 任意: インストール
+cp -R dist/QuotaBar.app /Applications/
+```
+
+起動時にデスクトップパネルを自動表示するには:
+
+```sh
+defaults write com.hivvv.quotabar showDesktopPanelOnLaunch -bool true
 ```
 
 ### 開発用コマンド
@@ -159,12 +209,10 @@ swift run QuotaBar --probe              # 3 社を 1 回取得して終了（ス
 open dist/QuotaBar.app --args --show-desktop   # Medium パネルを即表示
 ```
 
-### ログイン時に自動起動
+### アンインストール
 
 ```sh
-cp -R dist/QuotaBar.app /Applications/
-cp Scripts/com.hivvv.quotabar.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.hivvv.quotabar.plist
+./Scripts/uninstall.sh
 ```
 
 ---
