@@ -15,6 +15,10 @@ GROUP_DIR="${HOME}/Library/Group Containers/${GROUP_ID}"
 echo "▸ Ensuring App Group container…"
 mkdir -p "$GROUP_DIR"
 
+echo "▸ Generating app icon…"
+chmod +x Scripts/generate-icon.sh
+./Scripts/generate-icon.sh
+
 BUILD_DIR=".build/arm64-apple-macosx/release"
 
 echo "▸ Building release binaries…"
@@ -43,6 +47,7 @@ mkdir -p "$APPEX/Contents/MacOS"
 mkdir -p "$APPEX/Contents/Resources"
 cp "$WIDGET_BIN" "$APPEX/Contents/MacOS/${WIDGET_NAME}"
 cp "Resources/WidgetInfo.plist" "$APPEX/Contents/Info.plist"
+cp "Resources/AppIcon/AppIcon.icns" "$APPEX/Contents/Resources/"
 
 echo "▸ Assembling ${BUNDLE}…"
 rm -rf "$BUNDLE"
@@ -52,6 +57,7 @@ mkdir -p "$BUNDLE/Contents/Resources"
 
 cp "$BUILD_DIR/${APP_NAME}" "$BUNDLE/Contents/MacOS/${APP_NAME}"
 cp "Resources/Info.plist" "$BUNDLE/Contents/Info.plist"
+cp "Resources/AppIcon/AppIcon.icns" "$BUNDLE/Contents/Resources/"
 cp Resources/icons/*.svg "$BUNDLE/Contents/Resources/"
 cp -R "$APPEX" "$BUNDLE/Contents/PlugIns/"
 

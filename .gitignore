@@ -6,6 +6,8 @@ DerivedData/
 
 # Build artifacts
 dist/
+Resources/AppIcon/AppIcon.iconset/
+Resources/AppIcon/AppIcon.icns
 
 # Local reference checkout (not shipped)
 reference/
